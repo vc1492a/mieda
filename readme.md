@@ -21,10 +21,8 @@ algorithm for merging the intervals rapidly and with scalability.
 First install the package locally:
 
 ```shell
-pip install . # or pip3 install ... if you're using both Python 3 and 2.
+pip install mieda # or pip3 install ... if you're using both Python 3 and 2.
 ```
-
-**Note**: The package will later be available from the Python Package Index (PyPi).
 
 To merge intervals containing sets, pass a list of dictionaries as shown 
 in the below example:
