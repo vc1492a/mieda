@@ -23,5 +23,5 @@ be used in the future for Github and PyPi.
 - A `.travis.yml` file for future use once the project has been cleared 
 for open-source release. 
 - A `.gitignore` file to keep things tidy. 
-- A `notebooks` directory may include notebook containing analyses 
-of the algorithm's behavior or example use cases. 
+- A `notebooks` directory which includes notebooks containing analyses 
+of the algorithm's behavior and, later, example use cases. 

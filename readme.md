@@ -80,7 +80,7 @@ Tests are contained within the `tests` directory. To run tests for
 MIEDA, call pytest and pytest-cov via the command line:
 
 ```bash
-python3 -m pytest --cov=mieda
+python3 -m pytest --cov=mieda -vv
 ```
 
 Setting up a virtual environment for testing and development is recommended. 
