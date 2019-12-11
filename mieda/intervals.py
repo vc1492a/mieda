@@ -12,7 +12,7 @@ information to foreign countries or providing access to foreign persons.
 from itertools import combinations
 import networkx as nx
 from operator import itemgetter
-from typing import Tuple
+from typing import Tuple, Union
 import warnings
 
 
@@ -32,15 +32,16 @@ class Merge:
         return passed, interval_set
 
     @staticmethod
-    def union(intervals: list, key: str = "set_items") -> list:
+    def union(intervals: list, key: str = "set_items", return_graph: bool = False) -> Union[list, nx.DiGraph]:
 
         """
         Utilizes a directed graph to merge intervals according to unions in 'key' and update adjacent
         intervals to their new time ranges. If 2 comes before 3, then the intervals [1,3], [2,3] become [1], [2,3], [3].
         :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
         'group' which describe each interval.
-        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+        :param key: (optional) a string which identifies the key to use when merging intervals based on the sets contained in the
         intervals. Default value is 'set_items'.
+        :param return_graph: (optional) when True, returns a NetworkX directed graph object instead of a list of intervals.
         :return: a list of aggregated intervals (NetworkX edge objects).
         """
 
@@ -58,19 +59,14 @@ class Merge:
         # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
         interval_pairs = combinations(intervals, 2)
         for ip in interval_pairs:
-
             # if the start and end times are the same
             if (ip[0]["start"] == ip[1]["start"]) & (ip[0]["finish"] == ip[1]["finish"]):
                 # merge them into a single interval
-                interval_new = ip[0]
-                interval_new[key] = interval_new[key].union(ip[1][key])
-
-                # remove the old intervals from the input list (removes first matching value)
-                intervals.remove(ip[0])
-                intervals.remove(ip[1])
-
-                # add the new interval
-                intervals.append(interval_new)
+                ip[0][key] = ip[0][key].union(ip[1][key])
+                try:
+                    intervals.remove(ip[1])
+                except ValueError:
+                    pass
 
         # create a directed Graph
         graph = nx.DiGraph()
@@ -94,12 +90,14 @@ class Merge:
             # since we are going through in a sorted fashion, we do not need to scan through all pairs
             # if we have sorted pairs, we only need to check most recent interval
             # this is an improvement over the previous approach which scanned through all pairs
-            pairs = sorted(graph.edges(data=True), key=lambda x: x[0])
+            pairs = sorted(graph.edges(data=True), key=lambda x: x[0])[-2:]
 
             # check if the new interval starts in between another edges start and end
             # if it is, bisect the interval, create a shared interval and adjust the old ones
 
-            # since we sort the edges by the start interval,
+            interval_split = False
+
+            # iterate through the pairs
             for p in range(len(pairs)):
 
                 # if the start time falls between the pair
@@ -123,7 +121,7 @@ class Merge:
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
 
-                        break
+                        interval_split = True
 
                     # check if the interval ends outside of the previous one
                     if pairs[p][1] <= intervals[i]["finish"]:
@@ -146,10 +144,10 @@ class Merge:
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
 
-                        break
+                        interval_split = True
 
                 # if they start at the same time
-                if pairs[p][0] == intervals[i]["start"]:
+                elif pairs[p][0] == intervals[i]["start"]:
 
                     # if the current interval ends before
                     if intervals[i]["finish"] < pairs[p][1]:
@@ -167,7 +165,7 @@ class Merge:
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
 
-                        break
+                        interval_split = True
 
                     # if they start at the same time but the current interval ends after
                     if pairs[p][1] < intervals[i]["finish"]:
@@ -178,6 +176,8 @@ class Merge:
                         # add edges
                         graph.add_edge(
                             **{"u_of_edge": pairs[p][1], "v_of_edge": intervals[i]["finish"], key: intervals[i][key]})
+
+                        interval_split = True
 
                 # if the current interval starts before - this comes up only due to adding new pairs prior to resorting
                 # in the next for loop
@@ -199,7 +199,7 @@ class Merge:
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
 
-                        break
+                        interval_split = True
 
                     # if it ends after
                     if pairs[p][1] < intervals[i]["finish"]:
@@ -214,16 +214,30 @@ class Merge:
                             **{"u_of_edge": pairs[p][1], "v_of_edge": intervals[i]["finish"], key: right_attrs})
 
                         # remove the old edge
-                        graph.remove_edge(pairs[p][0], intervals[i]["finish"])
+                        try:
+                            graph.remove_edge(pairs[p][0], intervals[i]["finish"])
+                        except nx.NetworkXException:
+                            pass
 
-                        break
+                        interval_split = True
+
+            # if the interval wasn't split or processed, it still needs to be included in the graph
+            if interval_split is False:
+
+                # add edge
+                graph.add_edge(
+                    **{"u_of_edge": intervals[i]["start"], "v_of_edge": intervals[i]["finish"],
+                       key: intervals[i][key]})
 
         # return the new sorted intervals
-        graph_edges = sorted(graph.edges(data=True), key=lambda x: x[0])
-        intervals = list()
-        for e in graph_edges:
-            intervals.append(
-                {"start": e[0], "finish": e[1], key: e[2][key]}
-            )
+        if return_graph is True:
+            return graph
+        else:
+            graph_edges = sorted(graph.edges(data=True), key=lambda x: x[0])
+            intervals = list()
+            for e in graph_edges:
+                intervals.append(
+                    {"start": e[0], "finish": e[1], key: e[2][key]}
+                )
 
-        return intervals
+            return intervals

@@ -78,6 +78,16 @@ def interval_inputs() -> list:
         ]
     )
 
+    # B starts wholly after A
+    intervals.append(
+        [
+            {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+             "set_items": {"1"}},
+            {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 7, 1, 0, 0),
+             "set_items": {"2"}}
+        ]
+    )
+
     return intervals
 
 
@@ -153,6 +163,16 @@ def interval_outputs() -> list:
         ]
     )
 
+    # B starts wholly after A
+    outputs.append(
+        [
+            {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+             "set_items": {"1"}},
+            {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 7, 1, 0, 0),
+             "set_items": {"2"}}
+        ]
+    )
+
     return outputs
 
 
@@ -225,6 +245,23 @@ def complex_interval_inputs() -> list:
              "set_items": {"3"}},
             {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 8, 1, 0, 0),
              "set_items": {"4"}}
+        ]
+    )
+
+    # B starts after A, but C starts at the same time as B and ends before. D starts at the end time of C and ends last.
+    # now however there is a "dangling" interval in isolation
+    intervals.append(
+        [
+            {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+             "set_items": {"1"}},
+            {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 6, 1, 0, 0),
+             "set_items": {"2"}},
+            {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 5, 1, 0, 0),
+             "set_items": {"3"}},
+            {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 8, 1, 0, 0),
+             "set_items": {"4"}},
+            {"start": datetime.datetime(2020, 1, 11, 1, 0, 0), "finish": datetime.datetime(2020, 1, 12, 1, 0, 0),
+             "set_items": {"5"}}
         ]
     )
 
@@ -310,6 +347,177 @@ def complex_interval_outputs() -> list:
         ]
     )
 
+    # B starts after A, but C starts at the same time as B and ends before. D starts at the end time of C and ends last.
+    # now however there is a "dangling" interval in isolation
+    outputs.append(
+        [
+            {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 2, 1, 0, 0),
+             "set_items": {"1"}},
+            {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+             "set_items": {"1", "2", "3"}},
+            {"start": datetime.datetime(2020, 1, 4, 1, 0, 0), "finish": datetime.datetime(2020, 1, 5, 1, 0, 0),
+             "set_items": {"2", "3"}},
+            {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 6, 1, 0, 0),
+             "set_items": {"2", "4"}},
+            {"start": datetime.datetime(2020, 1, 6, 1, 0, 0), "finish": datetime.datetime(2020, 1, 8, 1, 0, 0),
+             "set_items": {"4"}},
+            {"start": datetime.datetime(2020, 1, 11, 1, 0, 0), "finish": datetime.datetime(2020, 1, 12, 1, 0, 0),
+             "set_items": {"5"}}
+        ]
+    )
+
+    return outputs
+
+
+@pytest.fixture()
+def interval_inputs_integers() -> list:
+    """
+    This fixture generates a set of intervals with integers as indices.
+    :return: a list of intervals to use for testing.
+    """
+
+    # create a list to store various interval types
+    intervals = list()
+
+    # B starts and ends after A
+    intervals.append(
+        [
+            {"start": 1, "finish": 4, "set_items": {"1"}},
+            {"start": 2, "finish": 6, "set_items": {"2"}}
+        ]
+    )
+
+    # B starts after A but ends at the same time as A
+    intervals.append(
+        [
+            {"start": 1, "finish": 4, "set_items": {"1"}},
+            {"start": 2, "finish": 4, "set_items": {"2"}}
+        ]
+    )
+
+    # B starts after A and ends before A
+    intervals.append(
+        [
+            {"start": 1, "finish": 4, "set_items": {"1"}},
+            {"start": 2, "finish": 3, "set_items": {"2"}}
+        ]
+    )
+
+    return intervals
+
+
+@pytest.fixture()
+def interval_outputs_integers() -> list:
+    """
+    This fixture generates a set of correct outputs against intervals with integers as indices.
+    :return: a list of intervals which contains the correct output for the integer-indexed intervals.
+    """
+
+    # create a list to store the various outputs
+    outputs = list()
+
+    # B starts and ends after A
+    outputs.append(
+        [
+            {'start': 1, 'finish': 2, 'set_items': {'1'}},
+            {'start': 2, 'finish': 4, 'set_items': {'1', '2'}},
+            {'start': 4, 'finish': 6, 'set_items': {'2'}}
+        ]
+    )
+
+    # B starts after A but ends at the same time as A
+    outputs.append(
+        [
+            {'start': 1, 'finish': 2, 'set_items': {'1'}},
+            {'start': 2, 'finish': 4, 'set_items': {'2', '1'}}
+        ]
+    )
+
+    # B starts after A and ends before A
+    outputs.append(
+        [
+            {'start': 1, 'finish': 2, 'set_items': {'1'}},
+            {'start': 2, 'finish': 3, 'set_items': {'2', '1'}},
+            {'start': 3, 'finish': 4, 'set_items': {'1'}}
+        ]
+    )
+
+    return outputs
+
+
+@pytest.fixture()
+def interval_inputs_strings() -> list:
+    """
+    This fixture generates a set of intervals with strings as indices.
+    :return: a list of intervals to use for testing.
+    """
+
+    # create a list to store various interval types
+    intervals = list()
+
+    # B starts and ends after A
+    intervals.append(
+        [
+            {"start": "A", "finish": "D", "set_items": {"1"}},
+            {"start": "B", "finish": "F", "set_items": {"2"}}
+        ]
+    )
+
+    # B starts after A but ends at the same time as A
+    intervals.append(
+        [
+            {"start": "A", "finish": "D", "set_items": {"1"}},
+            {"start": "B", "finish": "D", "set_items": {"2"}}
+        ]
+    )
+
+    # B starts after A and ends before A
+    intervals.append(
+        [
+            {"start": "A", "finish": "D", "set_items": {"1"}},
+            {"start": "B", "finish": "C", "set_items": {"2"}}
+        ]
+    )
+
+    return intervals
+
+
+@pytest.fixture()
+def interval_outputs_strings() -> list:
+    """
+    This fixture generates a set of correct outputs against intervals with strings as indices.
+    :return: a list of intervals which contains the correct output for the string-indexed intervals.
+    """
+
+    # create a list to store the various outputs
+    outputs = list()
+
+    # B starts and ends after A
+    outputs.append(
+        [
+            {'start': "A", 'finish': "B", 'set_items': {'1'}},
+            {'start': "B", 'finish': "D", 'set_items': {'1', '2'}},
+            {'start': "D", 'finish': "F", 'set_items': {'2'}}
+        ]
+    )
+
+    # B starts after A but ends at the same time as A
+    outputs.append(
+        [
+            {'start': "A", 'finish': "B", 'set_items': {'1'}},
+            {'start': "B", 'finish': "D", 'set_items': {'2', '1'}}
+        ]
+    )
+
+    # B starts after A and ends before A
+    outputs.append(
+        [
+            {'start': "A", 'finish': "B", 'set_items': {'1'}},
+            {'start': "B", 'finish': "C", 'set_items': {'2', '1'}},
+            {'start': "C", 'finish': "D", 'set_items': {'1'}}
+        ]
+    )
+
     return outputs
 
 
@@ -335,9 +543,33 @@ def test_complex_interval_types(complex_interval_inputs, complex_interval_output
     :return: None
     """
 
-    # TODO: the sets ar not guaranteed to come out in the correct order -- need improved test
-
     for i, o in zip(complex_interval_inputs, complex_interval_outputs):
+        out = Merge.union(i)
+        assert out == o
+
+
+def test_interval_integers(interval_inputs_integers, interval_outputs_integers) -> None:
+    """
+    For each of the available input types, tests whether the output is correct.
+    :param interval_inputs_integers: A set of all types of interval overlaps.
+    :param interval_outputs_integers: A set of outputs for all types of interval overlaps.
+    :return: None
+    """
+
+    for i, o in zip(interval_inputs_integers, interval_outputs_integers):
+        out = Merge.union(i)
+        assert out == o
+
+
+def test_interval_strings(interval_inputs_strings, interval_outputs_strings) -> None:
+    """
+    For each of the available input types, tests whether the output is correct.
+    :param interval_inputs_strings: A set of all types of interval overlaps.
+    :param interval_outputs_strings: A set of outputs for all types of interval overlaps.
+    :return: None
+    """
+
+    for i, o in zip(interval_inputs_strings, interval_outputs_strings):
         out = Merge.union(i)
         assert out == o
 
@@ -386,3 +618,61 @@ def test_alternate_attribute_key(interval_inputs) -> None:
         out = Merge.union(i, key="items")
         for j in out:
             assert "items" in j.keys()
+
+
+def test_return_graph(interval_inputs) -> None:
+    """
+    Ensures that a netwworkx.DiGraph object is returned with 'return_graph' is
+    set to True.
+    :param interval_inputs: A set of all types of interval overlaps.
+    :return: None
+    """
+
+    for i in interval_inputs:
+        out = Merge.union(i, return_graph=True)
+        assert type(out).__name__ == "DiGraph"
+
+
+def test_nx_exception() -> None:
+
+    """
+    Tests an exception which may occur in some scenarios such as one in which a "waterfall" of intervals occurs.
+    :return: None
+    """
+
+    # create a seed interval
+    seed_interval = [
+        {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+         "set_items": {"1"}}
+    ]
+
+    # let's create 10 intervals
+    interval_counts = list(range(0, 100, 10))
+
+    inputs = list()
+    intervals = list()
+
+    # create 10 intervals in a sequence with the same overlap
+    for i in interval_counts:
+        intervals = seed_interval + list()
+        for j in range(i):
+
+            # get the last interval
+            update_interval = intervals[-1]
+
+            # add 2 hours to the start and end times
+            new_interval = update_interval.copy()
+            new_interval["start"] = update_interval["start"] + datetime.timedelta(hours=2)
+            new_interval["finish"] = update_interval["finish"] + datetime.timedelta(hours=2)
+
+            # update the set items
+            new_interval["set_items"] = {str(j)}
+
+            # append the interval(s)
+            intervals.append(new_interval)
+
+        inputs.append(intervals)
+
+    # make sure we run without errors and return a result
+    out = Merge.union(intervals=intervals)
+    assert out is not None

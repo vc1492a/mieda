@@ -4,6 +4,22 @@ All notable changes to `mieda` will be documented in this Changelog.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) 
 and adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.0.2 
+### Added 
+- Code that allows intervals in isolation to be added to the directed graph. 
+- A parameter that allows the graph object (a NetworkX directed graph) 
+to be returned from `Merge.union` instead of a list of intervals (thanks 
+for the suggestion [Mark Hoffmann](https://github.com/mark-hoffmann)). 
+- Tests for new features, possible scenarios, and input types (integer 
+and string indices).
+
+### Changed 
+- Updated the readme to include the bump to version `0.0.2`, examples on 
+using MIEDA with integer or string indices, and a small change in 
+format. 
+- Updated Jupyter notebooks in the `notebooks` directory, which contains 
+examples against some identified use cases and speed profiling code.
+
 ## 0.0.1
 ### Added
 
