@@ -62,11 +62,22 @@ class Merge:
             # if the start and end times are the same
             if (ip[0]["start"] == ip[1]["start"]) & (ip[0]["finish"] == ip[1]["finish"]):
                 # merge them into a single interval
-                ip[0][key] = ip[0][key].union(ip[1][key])
+                interval_new = ip[0].copy()
+                interval_new[key] = ip[0][key].union(ip[1][key])
+
+                # attempt to remove any old intervals if they still exist in the data
+                try:
+                    intervals.remove(ip[0])
+                except ValueError:
+                    pass
+
                 try:
                     intervals.remove(ip[1])
                 except ValueError:
                     pass
+
+                # append the new, merged interval
+                intervals.append(interval_new)
 
         # create a directed Graph
         graph = nx.DiGraph()

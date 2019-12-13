@@ -265,6 +265,32 @@ def complex_interval_inputs() -> list:
         ]
     )
 
+    # test for the ability to handle more than one duplicate interval in the input data
+    intervals.append(
+        [
+            {'start': 1477875126, 'finish': 1477920079, 'set_items': {'1'}},
+            {'start': 1477875126, 'finish': 1477920079, 'set_items': {'1'}},
+            {'start': 1477875126, 'finish': 1477920079, 'set_items': {'1'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477901090, 'finish': 1477938541, 'set_items': {'2'}},
+            {'start': 1477915725, 'finish': 1477987473, 'set_items': {'3'}},
+            {'start': 1477915725, 'finish': 1477987473, 'set_items': {'3'}},
+            {'start': 1477915725, 'finish': 1477987473, 'set_items': {'3'}},
+            {'start': 1477915725, 'finish': 1477987473, 'set_items': {'3'}},
+            {'start': 1477939605, 'finish': 1477977748, 'set_items': {'4'}},
+            {'start': 1477939605, 'finish': 1477977748, 'set_items': {'4'}},
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}},
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}},
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}}
+        ]
+    )
+
     return intervals
 
 
@@ -363,6 +389,21 @@ def complex_interval_outputs() -> list:
              "set_items": {"4"}},
             {"start": datetime.datetime(2020, 1, 11, 1, 0, 0), "finish": datetime.datetime(2020, 1, 12, 1, 0, 0),
              "set_items": {"5"}}
+        ]
+    )
+
+    # test for the ability to handle more than one duplicate interval in the input data
+    outputs.append(
+        [
+            {'start': 1477875126, 'finish': 1477901090, 'set_items': {'1'}},
+            {'start': 1477901090, 'finish': 1477915725, 'set_items': {'1', '2'}},
+            {'start': 1477915725, 'finish': 1477920079, 'set_items': {'1', '2', '3'}},
+            {'start': 1477920079, 'finish': 1477938541, 'set_items': {'2', '3'}},
+            {'start': 1477938541, 'finish': 1477939605, 'set_items': {'3'}},
+            {'start': 1477939605, 'finish': 1477961500, 'set_items': {'3', '4'}},
+            {'start': 1477961500, 'finish': 1477977748, 'set_items': {'1', '3', '4'}},
+            {'start': 1477977748, 'finish': 1477987473, 'set_items': {'1', '3'}},
+            {'start': 1477987473, 'finish': 1478006402, 'set_items': {'1'}}
         ]
     )
 
