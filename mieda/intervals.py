@@ -46,11 +46,13 @@ class Merge:
 
         # check to see if the sets in the interval indicated is the proper format
         converted = False
-        for i in intervals:
-            status, interval_set = Merge.check_input_interval_set_type(i[key])
+        for i, interval in enumerate(intervals):
+            interval[key] = interval[key] if key in interval else set([i])
+            interval[key] = set([interval[key]]) if not isinstance(interval[key], set) else interval[key]
+            status, interval_set = Merge.check_input_interval_set_type(interval[key])
             if status is False:
                 converted = True
-            i[key] = interval_set
+            interval[key] = interval_set
         if converted is True:
             warnings.warn("The correct input format is a set - converted lists to sets.")
 
