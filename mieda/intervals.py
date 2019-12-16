@@ -17,6 +17,7 @@ import warnings
 
 
 class Merge:
+    warn = True
 
     @staticmethod
     def check_input_interval_set_type(interval_set) -> Tuple[bool, set]:
@@ -24,6 +25,7 @@ class Merge:
         Checks to see if the set is the interval is the correct format. If not, attempts to convert the indicated set.
         :return: a boolean indicating whether the test has passed and a set if the input could be converted.
         """
+
         passed = isinstance(interval_set, set)
         if not passed:
             interval_set = set(interval_set) if isinstance(interval_set, list) else set([interval_set])
@@ -31,31 +33,30 @@ class Merge:
 
         return passed, interval_set
 
+
     @staticmethod
-    def union(intervals: list, key: str = "set_items") -> list:
-
+    def validateIntervals(intervals: list, key: str) -> list:
         """
-        Utilizes a directed graph to merge intervals according to unions in 'key' and update adjacent
-        intervals to their new time ranges. If 2 comes before 3, then the intervals [1,3], [2,3] become [1], [2,3], [3].
-        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
-        'group' which describe each interval.
-        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
-        intervals. Default value is 'set_items'.
-        :return: a list of aggregated intervals (NetworkX edge objects).
+        Ensures passed intervals are properly formed and warns if not.
         """
 
-        # check to see if the sets in the interval indicated is the proper format
         converted = False
-        for i, interval in enumerate(intervals):
+        for i, interval in enumerate(intervals): 
             interval[key] = interval[key] if key in interval else set([i])
-            status, interval_set = Merge.check_input_interval_set_type(interval[key])
-            converted = not status
+            correct_type, interval_set = Merge.check_input_interval_set_type(interval[key])
+            converted = True if not correct_type else converted
             interval[key] = interval_set
-        if converted is True:
-            warnings.warn("The correct input format is a set - converted lists to sets.")
+        if Merge.warn and converted:
+            warnings.warn("The correct input format is a set -- converted lists to sets.")
 
-        # first, merge together any intervals that span the same range (e.g. start and end indices)
-        # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
+        return intervals
+
+
+    @staticmethod
+    def mergeSameIntervals(intervals: list, key: str) -> list:
+        """
+            Combines all identical intervals into one.
+        """
         interval_pairs = combinations(intervals, 2)
         for ip in interval_pairs:
 
@@ -71,6 +72,27 @@ class Merge:
 
                 # add the new interval
                 intervals.append(interval_new)
+        return intervals
+
+
+    @staticmethod
+    def union(intervals: list, key: str = "set_items") -> list:
+        """
+        Utilizes a directed graph to merge intervals according to unions in 'key' and update adjacent
+        intervals to their new time ranges. If 2 comes before 3, then the intervals [1,3], [2,3] become [1], [2,3], [3].
+        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
+        'group' which describe each interval.
+        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+        intervals. Default value is 'set_items'.
+        :return: a list of aggregated intervals (NetworkX edge objects).
+        """
+
+        # check to see if the sets in the interval indicated is the proper format
+        intervals = Merge.validateIntervals(intervals, key)
+
+        # first, merge together any intervals that span the same range (e.g. start and end indices)
+        # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
+        intervals = mergeSameIntervals(intervals, key)
 
         # create a directed Graph
         graph = nx.DiGraph()
