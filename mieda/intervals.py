@@ -24,9 +24,9 @@ class Merge:
         Checks to see if the set is the interval is the correct format. If not, attempts to convert the indicated set.
         :return: a boolean indicating whether the test has passed and a set if the input could be converted.
         """
-        passed = True
-        if isinstance(interval_set, list):
-            interval_set = set(interval_set)
+        passed = isinstance(interval_set, set)
+        if not passed:
+            interval_set = set(interval_set) if isinstance(interval_set, list) else set([interval_set])
             passed = False
 
         return passed, interval_set
@@ -48,10 +48,8 @@ class Merge:
         converted = False
         for i, interval in enumerate(intervals):
             interval[key] = interval[key] if key in interval else set([i])
-            interval[key] = set([interval[key]]) if not isinstance(interval[key], set) else interval[key]
             status, interval_set = Merge.check_input_interval_set_type(interval[key])
-            if status is False:
-                converted = True
+            converted = not status
             interval[key] = interval_set
         if converted is True:
             warnings.warn("The correct input format is a set - converted lists to sets.")
