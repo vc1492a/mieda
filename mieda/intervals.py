@@ -17,6 +17,7 @@ import warnings
 
 
 class Merge:
+    warn = True
 
     @staticmethod
     def check_input_interval_set_type(interval_set) -> Tuple[bool, set]:
@@ -24,39 +25,38 @@ class Merge:
         Checks to see if the set is the interval is the correct format. If not, attempts to convert the indicated set.
         :return: a boolean indicating whether the test has passed and a set if the input could be converted.
         """
-        passed = True
-        if isinstance(interval_set, list):
-            interval_set = set(interval_set)
+
+        passed = isinstance(interval_set, set)
+        if not passed:
+            interval_set = set(interval_set) if isinstance(interval_set, list) else set([str(interval_set)])
             passed = False
 
         return passed, interval_set
 
+
     @staticmethod
-    def union(intervals: list, key: str = "set_items", return_graph: bool = False) -> Union[list, nx.DiGraph]:
-
+    def validateIntervals(intervals: list, key: str) -> list:
         """
-        Utilizes a directed graph to merge intervals according to unions in 'key' and update adjacent
-        intervals to their new time ranges. If 2 comes before 3, then the intervals [1,3], [2,3] become [1], [2,3], [3].
-        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
-        'group' which describe each interval.
-        :param key: (optional) a string which identifies the key to use when merging intervals based on the sets contained in the
-        intervals. Default value is 'set_items'.
-        :param return_graph: (optional) when True, returns a NetworkX directed graph object instead of a list of intervals.
-        :return: a list of aggregated intervals (NetworkX edge objects).
+        Ensures passed intervals are properly formed and warns if not.
         """
 
-        # check to see if the sets in the interval indicated is the proper format
         converted = False
-        for i in intervals:
-            status, interval_set = Merge.check_input_interval_set_type(i[key])
-            if status is False:
-                converted = True
-            i[key] = interval_set
-        if converted is True:
-            warnings.warn("The correct input format is a set - converted lists to sets.")
+        for i, interval in enumerate(intervals): 
+            interval[key] = interval[key] if key in interval else set([i])
+            correct_type, interval_set = Merge.check_input_interval_set_type(interval[key])
+            converted = True if not correct_type else converted
+            interval[key] = interval_set
+        if Merge.warn and converted:
+            warnings.warn("The correct input format is a set -- converted lists to sets.")
 
-        # first, merge together any intervals that span the same range (e.g. start and end indices)
-        # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
+        return intervals
+
+
+    @staticmethod
+    def mergeSameIntervals(intervals: list, key: str) -> list:
+        """
+            Combines all identical intervals into one.
+        """
         interval_pairs = combinations(intervals, 2)
         for ip in interval_pairs:
             # if the start and end times are the same
@@ -78,12 +78,17 @@ class Merge:
 
                 # append the new, merged interval
                 intervals.append(interval_new)
+        return intervals
+
+
+    @staticmethod
+    def createDirectedGraph(intervals: list, key: str) -> nx.DiGraph:
+        """
+            Creates a directed graph from the interval set.
+        """
 
         # create a directed Graph
         graph = nx.DiGraph()
-
-        # sort the intervals by their start time to ensure a directional scan
-        intervals = sorted(intervals, key=itemgetter('start'))
 
         # start by adding the start and ends of the first interval as nodes
         graph.add_node(intervals[0]["start"])
@@ -93,9 +98,56 @@ class Merge:
         graph.add_edge(
             **{"u_of_edge": intervals[0]["start"], "v_of_edge": intervals[0]["finish"], key: intervals[0][key]}
         )
+        return graph
+
+
+    @staticmethod
+    def extendIntervalEnd(graph: nx.DiGraph, pairs, interval: dict, key: str):
+         # gather the adjacent attributes
+        left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key])
+        right_attrs = set(interval[key]).union(left_attrs)
+
+        # add edges
+        graph.add_edge(
+            **{"u_of_edge": pairs[p][0], "v_of_edge": interval["start"], key: left_attrs})
+        graph.add_edge(**{"u_of_edge": interval["start"], "v_of_edge": interval["finish"],
+                            key: right_attrs})
+        graph.add_edge(**{"u_of_edge": interval["finish"], "v_of_edge": pairs[p][1],
+                            key: graph[pairs[p][0]][pairs[p][1]][key]})
+
+        # remove the old edge
+        graph.remove_edge(pairs[p][0], pairs[p][1])
+
+        return graph
+
+
+    @staticmethod
+    def union(intervals: list, key: str = "set_items") -> list:
+        """
+        Utilizes a directed graph to merge intervals according to unions in 'key' and update adjacent
+        intervals to their new time ranges. If 2 comes before 3, then the intervals [1,3], [2,3] become [1], [2,3], [3].
+        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
+        'group' which describe each interval.
+        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+        intervals. Default value is 'set_items'.
+        :return: a list of aggregated intervals (NetworkX edge objects).
+        """
+
+        # check to see if the sets in the interval indicated is the proper format
+        intervals = Merge.validateIntervals(intervals, key)
+
+        # first, merge together any intervals that span the same range (e.g. start and end indices)
+        # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
+        intervals = mergeSameIntervals(intervals, key)
+
+        # sort the intervals by their start time to ensure a directional scan
+        intervals = sorted(intervals, key=itemgetter('start'))
+
+        # create a directed Graph from intervals
+        graph = createDirectedGraph(intervals, key)
 
         # add an edge between the nodes with its respective key and 'group' as attributes
-        for i in range(0, len(intervals)):
+        for _, interval in enumerate(intervals):
 
             # get the current pairs of nodes or edges
             # since we are going through in a sorted fashion, we do not need to scan through all pairs
@@ -112,45 +164,31 @@ class Merge:
             for p in range(len(pairs)):
 
                 # if the start time falls between the pair
-                if pairs[p][0] < intervals[i]["start"] < pairs[p][1]:
+                if pairs[p][0] < interval["start"] < pairs[p][1]:
 
                     # check to see if the interval ends before the considered pair
                     # if so, pair start to interval start, interval start to interval end, and interval end to pair end
-                    if intervals[i]["finish"] < pairs[p][1]:
-                        # gather the adjacent attributes
-                        left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key])
-                        right_attrs = set(intervals[i][key]).union(left_attrs)
-
-                        # add edges
-                        graph.add_edge(
-                            **{"u_of_edge": pairs[p][0], "v_of_edge": intervals[i]["start"], key: left_attrs})
-                        graph.add_edge(**{"u_of_edge": intervals[i]["start"], "v_of_edge": intervals[i]["finish"],
-                                          key: right_attrs})
-                        graph.add_edge(**{"u_of_edge": intervals[i]["finish"], "v_of_edge": pairs[p][1],
-                                          key: graph[pairs[p][0]][pairs[p][1]][key]})
-
-                        # remove the old edge
-                        graph.remove_edge(pairs[p][0], pairs[p][1])
-
-                        interval_split = True
+                    if interval["finish"] < pairs[p][1]:
+                        graph = extendIntervalEnd(graph, pairs, interval, key)
+                        break
 
                     # check if the interval ends outside of the previous one
-                    if pairs[p][1] <= intervals[i]["finish"]:
+                    if pairs[p][1] <= interval["finish"]:
 
                         # first make an alteration based on the start
                         left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key])
                         right_attrs = set(graph[pairs[p][0]][pairs[p][1]][key]).union(
-                            intervals[i][key])
+                            interval[key])
 
                         # add edges
                         graph.add_edge(
-                            **{"u_of_edge": pairs[p][0], "v_of_edge": intervals[i]["start"], key: left_attrs})
+                            **{"u_of_edge": pairs[p][0], "v_of_edge": interval["start"], key: left_attrs})
                         graph.add_edge(
-                            **{"u_of_edge": intervals[i]["start"], "v_of_edge": pairs[p][1], key: right_attrs})
+                            **{"u_of_edge": interval["start"], "v_of_edge": pairs[p][1], key: right_attrs})
 
-                        if pairs[p][1] < intervals[i]["finish"]:
-                            graph.add_edge(**{"u_of_edge": pairs[p][1], "v_of_edge": intervals[i]["finish"],
-                                              key: intervals[i][key]})
+                        if pairs[p][1] < interval["finish"]:
+                            graph.add_edge(**{"u_of_edge": pairs[p][1], "v_of_edge": interval["finish"],
+                                              key: interval[key]})
 
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
@@ -158,20 +196,20 @@ class Merge:
                         interval_split = True
 
                 # if they start at the same time
-                elif pairs[p][0] == intervals[i]["start"]:
+                if pairs[p][0] == interval["start"]:
 
                     # if the current interval ends before
-                    if intervals[i]["finish"] < pairs[p][1]:
+                    if interval["finish"] < pairs[p][1]:
                         # gather the adjacent attributes
                         left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key]).union(
-                            intervals[i][key])
+                            interval[key])
                         right_attrs = graph[pairs[p][0]][pairs[p][1]][key]
 
                         # add edges
                         graph.add_edge(
-                            **{"u_of_edge": pairs[p][0], "v_of_edge": intervals[i]["finish"], key: left_attrs})
+                            **{"u_of_edge": pairs[p][0], "v_of_edge": interval["finish"], key: left_attrs})
                         graph.add_edge(
-                            **{"u_of_edge": intervals[i]["finish"], "v_of_edge": pairs[p][1], key: right_attrs})
+                            **{"u_of_edge": interval["finish"], "v_of_edge": pairs[p][1], key: right_attrs})
 
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
@@ -179,33 +217,33 @@ class Merge:
                         interval_split = True
 
                     # if they start at the same time but the current interval ends after
-                    if pairs[p][1] < intervals[i]["finish"]:
+                    if pairs[p][1] < interval["finish"]:
                         # gather the adjacent attributes
                         graph[pairs[p][0]][pairs[p][1]][key] = graph[pairs[p][0]][pairs[p][1]][key].union(
-                            intervals[i][key])
+                            interval[key])
 
                         # add edges
                         graph.add_edge(
-                            **{"u_of_edge": pairs[p][1], "v_of_edge": intervals[i]["finish"], key: intervals[i][key]})
+                            **{"u_of_edge": pairs[p][1], "v_of_edge": interval["finish"], key: interval[key]})
 
                         interval_split = True
 
                 # if the current interval starts before - this comes up only due to adding new pairs prior to resorting
                 # in the next for loop
-                if intervals[i]["start"] < pairs[p][0]:
+                if interval["start"] < pairs[p][0]:
 
                     # if it ends before
-                    if intervals[i]["finish"] < pairs[p][1]:
+                    if interval["finish"] < pairs[p][1]:
                         # gather the adjacent attributes
                         left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key]).union(
-                            intervals[i][key])
+                            interval[key])
                         right_attrs = graph[pairs[p][0]][pairs[p][1]][key]
 
                         # add edges
                         graph.add_edge(
-                            **{"u_of_edge": pairs[p][0], "v_of_edge": intervals[i]["finish"], key: left_attrs})
+                            **{"u_of_edge": pairs[p][0], "v_of_edge": interval["finish"], key: left_attrs})
                         graph.add_edge(
-                            **{"u_of_edge": intervals[i]["finish"], "v_of_edge": pairs[p][1], key: right_attrs})
+                            **{"u_of_edge": interval["finish"], "v_of_edge": pairs[p][1], key: right_attrs})
 
                         # remove the old edge
                         graph.remove_edge(pairs[p][0], pairs[p][1])
@@ -213,16 +251,16 @@ class Merge:
                         interval_split = True
 
                     # if it ends after
-                    if pairs[p][1] < intervals[i]["finish"]:
+                    if pairs[p][1] < interval["finish"]:
                         # gather the adjacent attributes
                         left_attrs = set(graph[pairs[p][0]][pairs[p][1]][key]).union(
-                            intervals[i][key])
-                        right_attrs = intervals[i][key]
+                            interval[key])
+                        right_attrs = interval[key]
 
                         # add edges
                         graph[pairs[p][0]][pairs[p][1]][key] = left_attrs
                         graph.add_edge(
-                            **{"u_of_edge": pairs[p][1], "v_of_edge": intervals[i]["finish"], key: right_attrs})
+                            **{"u_of_edge": pairs[p][1], "v_of_edge": interval["finish"], key: right_attrs})
 
                         # remove the old edge
                         try:
