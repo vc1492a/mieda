@@ -15,7 +15,7 @@ from operator import itemgetter
 from typing import Tuple, Union
 import warnings
 
-import helpers
+from . import helpers
 
 
 class Merge:
@@ -49,7 +49,7 @@ class Merge:
             converted = True if not correct_type else converted
             interval[key] = interval_set
         if Merge.warn and converted:
-            warnings.warn("The correct input format is a set -- converted lists to sets.")
+            warnings.warn("The correct input format is a set - converted lists to sets.")
 
         return intervals
 
@@ -62,7 +62,7 @@ class Merge:
         interval_pairs = combinations(intervals, 2)
         for ip in interval_pairs:
             # if the start and end times are the same
-            if (ip[0]["start"] == ip[1]["start"]) & (ip[0]["finish"] == ip[1]["finish"]):
+            if (ip[0]["start"] == ip[1]["start"]) and (ip[0]["finish"] == ip[1]["finish"]):
                 # merge them into a single interval
                 interval_new = ip[0].copy()
                 interval_new[key] = ip[0][key].union(ip[1][key])
@@ -127,9 +127,17 @@ class Merge:
 
                 # if the start time falls between the pair
                 if pair[0] < interval["start"] < pair[1]:
-                    finished, interval_split, graph = helpers.intervalStartsInBetween(graph, pair, interval, key)
-                    if finished:
+                    interval_split = True
+
+                    # check to see if the interval ends before the considered pair
+                    # if so, pair start to interval start, interval start to interval end, and interval end to pair end
+                    if interval["finish"] < pair[1]:
+                        graph = helpers.intervalStartsInEndsBefore(graph, pair, interval, key)
                         break
+
+                    # check if the interval ends outside of the previous one
+                    if pair[1] <= interval["finish"]:
+                        graph = helpers.intervalStartsInEndsAfter(graph, pair, interval, key)
 
                 # if they start at the same time
                 elif pair[0] == interval["start"]:

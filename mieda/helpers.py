@@ -28,16 +28,15 @@ def createDirectedGraph(intervals: list, key: str) -> nx.DiGraph:
     return graph
 
 
-def extendIntervalEnd(graph: nx.DiGraph, pair, interval: dict, key: str):
+def intervalStartsInEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key])
-    right_attrs = set(intervals[i][key]).union(left_attrs)
+    right_attrs = set(interval[key]).union(left_attrs)
 
     # add edges
     graph.add_edge(**{"u_of_edge": pair[0], "v_of_edge": interval["start"], key: left_attrs})
     graph.add_edge(**{"u_of_edge": interval["start"], "v_of_edge": interval["finish"], key: right_attrs})
-    graph.add_edge(**{"u_of_edge": interval["finish"], "v_of_edge": pair[1],
-                        key: graph[pair[0]][pair[1]][key]})
+    graph.add_edge(**{"u_of_edge": interval["finish"], "v_of_edge": pair[1], key: graph[pair[0]][pair[1]][key]})
 
     # remove the old edge
     graph.remove_edge(pair[0], pair[1])
@@ -45,7 +44,7 @@ def extendIntervalEnd(graph: nx.DiGraph, pair, interval: dict, key: str):
     return graph
 
 
-def alterIntervalStart(graph: nx.DiGraph, pair, interval: dict, key: str):
+def intervalStartsInEndsAfter(graph: nx.DiGraph, pair, interval: dict, key: str):
     # first make an alteration based on the start
     left_attrs = set(graph[pair[0]][pair[1]][key])
     right_attrs = set(graph[pair[0]][pair[1]][key]).union(interval[key])
@@ -61,24 +60,6 @@ def alterIntervalStart(graph: nx.DiGraph, pair, interval: dict, key: str):
     graph.remove_edge(pair[0], pair[1])
 
     return graph
-
-
-def intervalStartsInBetween(graph: nx.DiGraph, pair, interval: dict, key: str):
-    interval_split = False
-    finished = False
-
-    # check to see if the interval ends before the considered pair
-    # if so, pair start to interval start, interval start to interval end, and interval end to pair end
-    if interval["finish"] < pair[1]:
-        graph = extendIntervalEnd(graph, pair, interval, key)
-        finished = True
-
-    # check if the interval ends outside of the previous one
-    if pair[1] <= interval["finish"]:
-        graph = alterIntervalStart(graph, pair, interval, key)
-        interval_split = True
-
-    return finished, interval_split, graph
 
 
 def intervalEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
@@ -152,10 +133,10 @@ def intervalStartsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
 
         # remove the old edge
         try:
-            graph.remove_edge(pair[0], intervals[i]["finish"])
+            graph.remove_edge(pair[0], interval["finish"])
         except nx.NetworkXException:
             pass
 
         interval_split = True
 
-    return interval_start, graph
+    return interval_split, graph
