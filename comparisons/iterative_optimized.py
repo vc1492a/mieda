@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 def mergeDuplicates(new_intervals, key):
     for interval in new_intervals:
         for i, compare_interval in enumerate(new_intervals):
@@ -53,12 +55,11 @@ class Merge:
     def union(intervals: list, key: str = "set_items"):
         new_intervals = []
 
-        for start_interval in intervals:
-            split_intervals = False
-            for end_interval in intervals:
-                if start_interval is end_interval:
-                    continue
+        intervals = sorted(intervals, key=itemgetter('start'))
 
+        for i, start_interval in enumerate(intervals):
+            split_intervals = False
+            for end_interval in intervals[i+1:]:
                 if start_interval["start"] <= end_interval["start"] < start_interval["finish"]:
                     split_intervals = True
                     continue

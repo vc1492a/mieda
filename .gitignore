@@ -7,3 +7,4 @@ __pycache__/
 mieda.egg-info
 htmlcov
 build
+.ipynb_checkpoints
