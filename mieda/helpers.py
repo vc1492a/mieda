@@ -31,7 +31,7 @@ def createDirectedGraph(intervals: list, key: str) -> nx.DiGraph:
 def extendIntervalEnd(graph: nx.DiGraph, pair, interval: dict, key: str):
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key])
-    right_attrs = set(intervals[i][key]).union(left_attrs)
+    right_attrs = set(interval[key]).union(left_attrs)
 
     # add edges
     graph.add_edge(**{"u_of_edge": pair[0], "v_of_edge": interval["start"], key: left_attrs})
@@ -152,10 +152,10 @@ def intervalStartsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
 
         # remove the old edge
         try:
-            graph.remove_edge(pair[0], intervals[i]["finish"])
+            graph.remove_edge(pair[0], interval["finish"])
         except nx.NetworkXException:
             pass
 
         interval_split = True
 
-    return interval_start, graph
+    return interval_split, graph
