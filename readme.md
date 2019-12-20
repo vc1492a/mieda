@@ -125,7 +125,7 @@ This project is licensed under the Apache 2.0 license.
 If citing `mieda` in your research, please consider using the following entry: 
 
 ```
-@article{ConstantinouMishra2020,
+@article{ConstantinouMishraStonebrakerHoffmann2020,
   doi = {},
   url = {},
   year  = {},
@@ -134,7 +134,7 @@ If citing `mieda` in your research, please consider using the following entry:
   volume = {},
   number = {},
   pages = {},
-  author = {Valentino Constantinou, Asitang Mishra},
+  author = {Valentino Constantinou, Asitang Mishra, Ryan Stonebraker, Mark Hoffmann},
   title = {},
   journal = {}
 }
