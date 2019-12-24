@@ -75,23 +75,3 @@ class Merge:
                 break
             
         return intervals
-
-if __name__ == "__main__":
-    intervals = [
-        {
-            "start": 0,
-            "finish": 5,
-            "set_items": {1}
-        },
-        {
-            "start": 2,
-            "finish": 7,
-            "set_items": {2}
-        },
-        {
-            "start": 3,
-            "finish": 4,
-            "set_items": {3}
-        },
-    ]
-    print(Merge.union(intervals))

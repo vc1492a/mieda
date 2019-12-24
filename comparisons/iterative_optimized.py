@@ -1,76 +1,69 @@
 from operator import itemgetter
 
-def mergeDuplicates(new_intervals, key):
-    for interval in new_intervals:
-        for i, compare_interval in enumerate(new_intervals):
-            if interval is compare_interval:
+def createInterval(start, finish, keys, key):
+    new_interval = {}
+    new_interval["start"] = start
+    new_interval["finish"] = finish
+    new_interval[key] = keys.copy()
+    return new_interval
+
+
+def getMainPermutations(intervals, key):
+    conflicts = False
+    new_intervals = []
+    intervals = sorted(intervals, key=itemgetter("start", "finish"))
+    for start_interval in intervals:
+        min_start = start_interval["start"]
+        max_list = [start_interval["finish"]]
+        for compare_interval in intervals:
+            if compare_interval["finish"] <= start_interval["start"]:
                 continue
+            elif compare_interval["start"] > start_interval["finish"]:
+                break
+            conflicts = True
 
-            if interval["start"] == compare_interval["start"] and interval["finish"] == compare_interval["finish"]:
-                interval[key] = interval[key].union(compare_interval[key])
-                del new_intervals[i]
-    return new_intervals
+            if start_interval["start"] < compare_interval["start"] < start_interval["finish"]:
+                max_list.append(compare_interval["start"])
+            if start_interval["start"] < compare_interval["finish"] < start_interval["finish"]:
+                max_list.append(compare_interval["finish"])
+
+        max_list = sorted(max_list)
+        for end in max_list:
+            if min_start == end:
+                continue
+            new_intervals.append(createInterval(min_start, end, start_interval[key], key))
+            min_start = end
 
 
-def startIntervalIsInBetween(start_interval, end_interval, new_intervals, key):
-    if start_interval["start"] != end_interval["start"]:
-        new_intervals.append(
-            dict(zip(("start", "finish", key), 
-            (end_interval["start"], start_interval["start"], 
-            end_interval[key])))
-        )
+    return conflicts, new_intervals
 
-    if start_interval["finish"] < end_interval["finish"]:
-        new_intervals += [
-            dict(zip(("start", "finish", key), 
-            (start_interval["start"], start_interval["finish"], 
-            {start_interval[key]}))),
-            dict(zip(("start", "finish", key), 
-            (start_interval["finish"], end_interval["finish"], 
-            end_interval[key])))
-        ]
 
-    elif start_interval["finish"] == end_interval["finish"]:
-        new_intervals.append(
-            dict(zip(("start", "finish", key), 
-            (start_interval["start"], end_interval["finish"], 
-            start_interval[key].union(end_interval[key]))))
-        )
+def resolveConflicts(intervals, key):
+    resolved_intervals = []
+    skip = {}
+    for i, start_interval in enumerate(intervals):
+        if (start_interval["start"], start_interval["finish"]) in skip:
+            continue
 
-    elif start_interval["finish"] > end_interval["finish"]:
-        new_intervals += [
-            dict(zip(("start", "finish", key), 
-            (start_interval["start"], end_interval["finish"], 
-            start_interval[key].union(end_interval[key])))),
-            dict(zip(("start", "finish", key), 
-            (end_interval["finish"], start_interval["finish"], 
-            start_interval[key])))
-        ]
+        conflict = False
+        for j, compare_interval in enumerate(intervals):
+            if start_interval["start"] == compare_interval["start"] and start_interval["finish"] > compare_interval["finish"]:
+                compare_interval[key] = compare_interval[key].union(start_interval[key])
+                conflict = True
+                break
 
-    return new_intervals
+            elif (start_interval["start"], start_interval["finish"]) == (compare_interval["start"], compare_interval["finish"]):
+                start_interval[key] = start_interval[key].union(compare_interval[key])
+                skip[(start_interval["start"], start_interval["finish"])] = True
 
+        if not conflict:
+            resolved_intervals.append(start_interval)
+    return resolved_intervals
 
 class Merge:
     @staticmethod
     def union(intervals: list, key: str = "set_items"):
-        new_intervals = []
-
-        intervals = sorted(intervals, key=itemgetter('start'))
-
-        for i, start_interval in enumerate(intervals):
-            split_intervals = False
-            for end_interval in intervals[i+1:]:
-                if start_interval["start"] <= end_interval["start"] < start_interval["finish"]:
-                    split_intervals = True
-                    continue
-
-                if end_interval["start"] <= start_interval["start"] < end_interval["finish"]:
-                    split_intervals = True
-                    new_intervals = startIntervalIsInBetween(start_interval, end_interval, new_intervals, key)
-
-            if not split_intervals:
-                new_intervals.append(start_interval)
-
-        new_intervals = mergeDuplicates(new_intervals, key)
-
-        return new_intervals
+        conflict, intervals = getMainPermutations(intervals, key)
+        if conflict:
+            intervals = resolveConflicts(intervals, key)
+        return intervals
