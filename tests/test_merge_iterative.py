@@ -1,10 +1,11 @@
 # Authors: Valentino Constantinou <vconstan@jpl.caltech.edu>, Asitang Mishra <asitang.mishra@jpl.caltech.edu>
 # License: Apache 2.0
 
-from comparisons.iterative_optimized import Merge
+from comparisons.iterative import Merge
 
 import datetime
 import pytest
+from operator import itemgetter
 
 
 # fixtures
@@ -236,16 +237,16 @@ def complex_interval_inputs() -> list:
 
     # B starts after A, but C starts at the same time as B and ends before. D starts at the end time of C and ends last.
     intervals.append(
-        [
-            {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
-             "set_items": {"1"}},
-            {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 6, 1, 0, 0),
-             "set_items": {"2"}},
-            {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 5, 1, 0, 0),
-             "set_items": {"3"}},
-            {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 8, 1, 0, 0),
-             "set_items": {"4"}}
-        ]
+         [
+             {"start": datetime.datetime(2020, 1, 1, 1, 0, 0), "finish": datetime.datetime(2020, 1, 4, 1, 0, 0),
+              "set_items": {"1"}},
+             {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 6, 1, 0, 0),
+              "set_items": {"2"}},
+             {"start": datetime.datetime(2020, 1, 2, 1, 0, 0), "finish": datetime.datetime(2020, 1, 5, 1, 0, 0),
+              "set_items": {"3"}},
+             {"start": datetime.datetime(2020, 1, 5, 1, 0, 0), "finish": datetime.datetime(2020, 1, 8, 1, 0, 0),
+              "set_items": {"4"}}
+         ]
     )
 
     # B starts after A, but C starts at the same time as B and ends before. D starts at the end time of C and ends last.
@@ -285,9 +286,9 @@ def complex_interval_inputs() -> list:
             {'start': 1477915725, 'finish': 1477987473, 'set_items': {'3'}},
             {'start': 1477939605, 'finish': 1477977748, 'set_items': {'4'}},
             {'start': 1477939605, 'finish': 1477977748, 'set_items': {'4'}},
-            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}},
-            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}},
-            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'1'}}
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'5'}},
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'5'}},
+            {'start': 1477961500, 'finish': 1478006402, 'set_items': {'5'}}
         ]
     )
 
@@ -401,11 +402,12 @@ def complex_interval_outputs() -> list:
             {'start': 1477920079, 'finish': 1477938541, 'set_items': {'2', '3'}},
             {'start': 1477938541, 'finish': 1477939605, 'set_items': {'3'}},
             {'start': 1477939605, 'finish': 1477961500, 'set_items': {'3', '4'}},
-            {'start': 1477961500, 'finish': 1477977748, 'set_items': {'1', '3', '4'}},
-            {'start': 1477977748, 'finish': 1477987473, 'set_items': {'1', '3'}},
-            {'start': 1477987473, 'finish': 1478006402, 'set_items': {'1'}}
+            {'start': 1477961500, 'finish': 1477977748, 'set_items': {'3', '4', '5'}},
+            {'start': 1477977748, 'finish': 1477987473, 'set_items': {'3', '5'}},
+            {'start': 1477987473, 'finish': 1478006402, 'set_items': {'5'}}
         ]
     )
+
 
     return outputs
 
@@ -571,9 +573,13 @@ def test_interval_types(interval_inputs, interval_outputs) -> None:
     :return: None
     """
 
+    for output in interval_outputs:
+        for interval in output:
+            interval["set_items"] = set(sorted(interval["set_items"], reverse=True))
+
     for i, o in zip(interval_inputs, interval_outputs):
-        out = Merge.union(i)
-        assert out == o
+        out = sorted(Merge.union(i), key=itemgetter('start', 'finish'))
+        assert out == sorted(o, key=itemgetter('start', 'finish'))
 
 
 def test_complex_interval_types(complex_interval_inputs, complex_interval_outputs) -> None:
@@ -585,8 +591,13 @@ def test_complex_interval_types(complex_interval_inputs, complex_interval_output
     """
 
     for i, o in zip(complex_interval_inputs, complex_interval_outputs):
-        out = Merge.union(i)
+        out = sorted(Merge.union(i), key=itemgetter('start', 'finish'))
+        assert len(out) == len(o)
+        
+        o = sorted(o, key=itemgetter('start', 'finish'))
         assert out == o
+        for out, expected in zip(out, o):
+            assert out == expected
 
 
 def test_interval_integers(interval_inputs_integers, interval_outputs_integers) -> None:
@@ -597,9 +608,13 @@ def test_interval_integers(interval_inputs_integers, interval_outputs_integers) 
     :return: None
     """
 
+    for output in interval_outputs_integers:
+        for interval in output:
+            interval["set_items"] = set(sorted(interval["set_items"], reverse=True))
+
     for i, o in zip(interval_inputs_integers, interval_outputs_integers):
-        out = Merge.union(i)
-        assert out == o
+        out = sorted(Merge.union(i), key=itemgetter('start', 'finish'))
+        assert out == sorted(o, key=itemgetter('start', 'finish'))
 
 
 def test_interval_strings(interval_inputs_strings, interval_outputs_strings) -> None:
@@ -610,9 +625,13 @@ def test_interval_strings(interval_inputs_strings, interval_outputs_strings) -> 
     :return: None
     """
 
+    for output in interval_outputs_strings:
+        for interval in output:
+            interval["set_items"] = set(sorted(interval["set_items"], reverse=True))
+
     for i, o in zip(interval_inputs_strings, interval_outputs_strings):
-        out = Merge.union(i)
-        assert out == o
+        out = sorted(Merge.union(i), key=itemgetter('start', 'finish'))
+        assert out == sorted(o, key=itemgetter('start', 'finish'))
 
 
 # def test_incorrect_format(interval_inputs) -> None:
