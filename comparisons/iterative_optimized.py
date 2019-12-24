@@ -16,7 +16,7 @@ def getMainPermutations(intervals, key):
         min_start = start_interval["start"]
         max_list = [start_interval["finish"]]
         for compare_interval in intervals:
-            if compare_interval["finish"] <= start_interval["start"]:
+            if compare_interval["finish"] <= start_interval["start"] or start_interval == compare_interval:
                 continue
             elif compare_interval["start"] > start_interval["finish"]:
                 break
@@ -41,15 +41,21 @@ def getMainPermutations(intervals, key):
 def resolveConflicts(intervals, key):
     resolved_intervals = []
     skip = {}
-    for i, start_interval in enumerate(intervals):
+    search_start = 0
+    for start_interval in intervals:
         if (start_interval["start"], start_interval["finish"]) in skip:
             continue
 
         conflict = False
-        for j, compare_interval in enumerate(intervals):
+        for j, compare_interval in enumerate(intervals[search_start:]):
+            if compare_interval["finish"] < start_interval["start"]:
+                search_start = j
+                continue
+
             if start_interval["start"] == compare_interval["start"] and start_interval["finish"] > compare_interval["finish"]:
-                compare_interval[key] = compare_interval[key].union(start_interval[key])
                 conflict = True
+                break
+            if start_interval["finish"] < compare_interval["start"]:
                 break
 
             elif (start_interval["start"], start_interval["finish"]) == (compare_interval["start"], compare_interval["finish"]):
@@ -65,5 +71,6 @@ class Merge:
     def union(intervals: list, key: str = "set_items"):
         conflict, intervals = getMainPermutations(intervals, key)
         if conflict:
+            intervals = sorted(intervals, key=itemgetter("start", "finish"))
             intervals = resolveConflicts(intervals, key)
         return intervals
