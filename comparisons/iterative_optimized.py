@@ -8,68 +8,82 @@ def createInterval(start, finish, keys, key):
     return new_interval
 
 
+def getMaxListIntervals(min_start, max_list, key):
+    intervals = []
+    max_list = sorted(max_list, key=lambda x: x["point"])
+    for i, end in enumerate(max_list):
+        if i == 0 or min_start["point"] == end["point"]:
+            if len(max_list) == 1:
+                intervals.append(createInterval(min_start["point"], end["point"], end["keys"], key))
+            min_start["keys"] = min_start["keys"].union(end["keys"])
+            continue
+
+        keys = set()
+        if min_start["label"] == "start":
+            keys = min_start["keys"].union(intervals[-1][key]) if len(intervals) > 0 else min_start["keys"]
+        elif end["label"] == "finish":
+            if i + 1 < len(max_list):
+                if max_list[i+1]["label"] == "start" and intervals:
+                    keys = intervals[-1][key].difference(max_list[i-1]["keys"])
+                else:
+                    keys = end["keys"].union(max_list[i+1]["keys"])
+            else:
+                keys = end["keys"]
+        else:
+            keys = intervals[-1][key].difference(min_start["keys"]).difference(end["keys"])
+
+        intervals.append(createInterval(min_start["point"], end["point"], keys, key))
+        min_start = end
+    return intervals
+
+
+def mergeSameIntervals(intervals, key):
+    new_intervals = []
+    last_interval = intervals[0]
+    for interval in intervals[1:]:
+        if (last_interval["start"], last_interval["finish"]) == (interval["start"], interval["finish"]):
+            last_interval[key] = last_interval[key].union(interval[key])
+        else:
+            new_intervals.append(last_interval)
+            last_interval = interval
+    if not new_intervals or new_intervals[-1] != last_interval:
+        new_intervals.append(last_interval)
+    return new_intervals
+
+
+def create_vertex(interval, label, key):
+    vertex = {"point": interval[label], "keys": interval[key], "label": label}
+    return vertex
+
+
 def getMainPermutations(intervals, key):
     conflicts = False
     new_intervals = []
     intervals = sorted(intervals, key=itemgetter("start", "finish"))
-    compare_search = 0
-    for start_interval in intervals:
-        min_start = start_interval["start"]
-        max_list = [start_interval["finish"]]
-        for compare_i, compare_interval in enumerate(intervals[compare_search:]):
-            if compare_interval["finish"] <= start_interval["start"]:
-                if start_interval != compare_interval:
-                    compare_search = compare_i
-                continue
-            elif compare_interval["start"] > start_interval["finish"]:
-                break
-            conflicts = True
-
-            if start_interval["start"] < compare_interval["start"] < start_interval["finish"]:
-                if compare_interval["start"] not in max_list:
-                    max_list.append(compare_interval["start"])
-            if start_interval["start"] < compare_interval["finish"] < start_interval["finish"]:
-                if compare_interval["finish"] not in max_list:
-                    max_list.append(compare_interval["finish"])
-
-        max_list = sorted(max_list)
-        for end in max_list:
-            if min_start == end:
-                continue
-            new_intervals.append(createInterval(min_start, end, start_interval[key], key))
-            min_start = end
-
+    intervals = mergeSameIntervals(intervals, key)
+    
+    min_start = create_vertex(intervals[0], "start", key)
+    max_end = intervals[0]["finish"]
+    max_list = [create_vertex(intervals[0], "start", key), create_vertex(intervals[0], "finish", key)]
+    for interval in intervals[1:]:
+        if min_start["point"] < interval["start"] < max_end:
+            max_list.append(create_vertex(interval, "start", key))
+            max_list.append(create_vertex(interval, "finish", key))
+            max_end = max(max_end, interval["finish"])
+        elif min_start["point"] < interval["finish"] < max_end:
+            max_list.append(create_vertex(interval, "finish", key))
+        elif min_start["point"] == interval["start"] and interval["finish"] > max_end:
+            min_start["keys"] = min_start["keys"].union(interval[key])
+            max_list.append(create_vertex(interval, "finish", key))
+            max_end = interval["finish"]
+        
+        if interval["start"] >= max_end:
+            new_intervals += getMaxListIntervals(min_start, max_list, key)
+            min_start = create_vertex(interval, "start", key)
+            max_list = [create_vertex(interval, "finish", key)]
+    new_intervals += getMaxListIntervals(min_start, max_list, key)
 
     return conflicts, new_intervals
-
-
-# def resolveConflicts(intervals, key):
-#     resolved_intervals = []
-#     skip = {}
-#     search_start = 0
-#     for start_interval in intervals:
-#         if (start_interval["start"], start_interval["finish"]) in skip:
-#             continue
-
-#         conflict = False
-#         for j, compare_interval in enumerate(intervals[search_start:]):
-#             if compare_interval["finish"] < start_interval["start"]:
-#                 search_start = j
-#                 continue
-
-#             if start_interval["start"] == compare_interval["start"] and start_interval["finish"] > compare_interval["finish"]:
-#                 conflict = True
-#                 break
-#             if start_interval["finish"] < compare_interval["start"]:
-#                 break
-
-#             elif (start_interval["start"], start_interval["finish"]) == (compare_interval["start"], compare_interval["finish"]):
-#                 start_interval[key] = start_interval[key].union(compare_interval[key])
-#                 skip[(start_interval["start"], start_interval["finish"])] = True
-
-#         if not conflict:
-#             resolved_intervals.append(start_interval)
-#     return resolved_intervals
 
 
 def resolveConflicts(intervals, key):
