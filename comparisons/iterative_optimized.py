@@ -1,6 +1,7 @@
 from operator import itemgetter
 
-def createInterval(start, finish, keys, key):
+
+def create_interval(start, finish, keys, key):
     new_interval = {}
     new_interval["start"] = start
     new_interval["finish"] = finish
@@ -8,13 +9,13 @@ def createInterval(start, finish, keys, key):
     return new_interval
 
 
-def getMaxListIntervals(min_start, max_list, key):
+def get_max_list_intervals(min_start, max_list, key):
     intervals = []
     max_list = sorted(max_list, key=lambda x: x["point"])
     for i, end in enumerate(max_list):
         if i == 0 or min_start["point"] == end["point"]:
             if len(max_list) == 1:
-                intervals.append(createInterval(min_start["point"], end["point"], end["keys"], key))
+                intervals.append(create_interval(min_start["point"], end["point"], end["keys"], key))
             min_start["keys"] = min_start["keys"].union(end["keys"])
             continue
 
@@ -32,12 +33,12 @@ def getMaxListIntervals(min_start, max_list, key):
         else:
             keys = intervals[-1][key].difference(min_start["keys"]).difference(end["keys"])
 
-        intervals.append(createInterval(min_start["point"], end["point"], keys, key))
+        intervals.append(create_interval(min_start["point"], end["point"], keys, key))
         min_start = end
     return intervals
 
 
-def mergeSameIntervals(intervals, key):
+def merge_same_intervals(intervals, key):
     new_intervals = []
     last_interval = intervals[0]
     for interval in intervals[1:]:
@@ -56,11 +57,11 @@ def create_vertex(interval, label, key):
     return vertex
 
 
-def getMainPermutations(intervals, key):
+def get_main_permutations(intervals, key):
     conflicts = False
     new_intervals = []
     intervals = sorted(intervals, key=itemgetter("start", "finish"))
-    intervals = mergeSameIntervals(intervals, key)
+    intervals = merge_same_intervals(intervals, key)
     
     min_start = create_vertex(intervals[0], "start", key)
     max_end = intervals[0]["finish"]
@@ -78,15 +79,15 @@ def getMainPermutations(intervals, key):
             max_end = interval["finish"]
         
         if interval["start"] >= max_end:
-            new_intervals += getMaxListIntervals(min_start, max_list, key)
+            new_intervals += get_max_list_intervals(min_start, max_list, key)
             min_start = create_vertex(interval, "start", key)
             max_list = [create_vertex(interval, "finish", key)]
-    new_intervals += getMaxListIntervals(min_start, max_list, key)
+    new_intervals += get_max_list_intervals(min_start, max_list, key)
 
     return conflicts, new_intervals
 
 
-def resolveConflicts(intervals, key):
+def resolve_conflicts(intervals, key):
     resolved_intervals = []
     current_interval = intervals[0]
     for interval in intervals[1:]:
@@ -102,8 +103,8 @@ def resolveConflicts(intervals, key):
 class Merge:
     @staticmethod
     def union(intervals: list, key: str = "set_items"):
-        conflict, intervals = getMainPermutations(intervals, key)
+        conflict, intervals = get_main_permutations(intervals, key)
         if conflict:
             intervals = sorted(intervals, key=itemgetter("start", "finish"))
-            intervals = resolveConflicts(intervals, key)
+            intervals = resolve_conflicts(intervals, key)
         return intervals
