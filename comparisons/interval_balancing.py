@@ -33,4 +33,4 @@ class Merge:
             max_list.append(create_vertex(interval, "start", key))
             max_list.append(create_vertex(interval, "finish", key))
         
-        return get_max_list_intervals(max_list, key)
+        return get_max_list_intervals(max_list, key) if max_list else []
