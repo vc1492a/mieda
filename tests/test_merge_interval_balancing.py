@@ -1,7 +1,7 @@
 # Authors: Valentino Constantinou <vconstan@jpl.caltech.edu>, Asitang Mishra <asitang.mishra@jpl.caltech.edu>
 # License: Apache 2.0
 
-from comparisons.iterative_optimized import Merge
+from comparisons.interval_balancing import Merge
 
 import datetime
 import pytest
