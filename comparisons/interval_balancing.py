@@ -2,21 +2,23 @@ from operator import itemgetter
 
 
 def create_interval(start, finish, keys, key):
+    """Returns a properly formed interval dictionary object."""
     new_interval = {"start": start, "finish": finish}
     new_interval[key] = keys
     return new_interval
 
 
-def get_max_list_intervals(max_list, key):
-    max_list = sorted(max_list, key=lambda x: x["point"])
+def reconstruct_intervals_from_vertices(vtx_list, key):
+    """Takes a list of vertices from deconstructed, potentially conflicting intervals and returns a list of deconflicted intervals."""
+    vtx_list = sorted(vtx_list, key=lambda x: x["point"])
     intervals = []
     open_ints = set()
-    last_interval = max_list[0]
-    for interval in max_list:
-        if open_ints and last_interval["point"] != interval["point"]:
-            intervals.append(create_interval(last_interval["point"], interval["point"], open_ints, key))
-        open_ints = open_ints.union(interval["keys"]) if interval["label"] == "start" else open_ints.difference(interval["keys"])
-        last_interval = interval
+    last_vertex = vtx_list[0]
+    for vertex in vtx_list:
+        if open_ints and last_vertex["point"] != vertex["point"]:
+            intervals.append(create_interval(last_vertex["point"], vertex["point"], open_ints, key))
+        open_ints = open_ints.union(vertex["keys"]) if vertex["label"] == "start" else open_ints.difference(vertex["keys"])
+        last_vertex = vertex
     return intervals
 
 
@@ -28,9 +30,11 @@ def create_vertex(interval, label, key):
 class Merge:
     @staticmethod
     def union(intervals: list, key: str = "set_items"):
-        max_list = []
-        for interval in intervals:
-            max_list.append(create_vertex(interval, "start", key))
-            max_list.append(create_vertex(interval, "finish", key))
+        """Combines a list of potentially conflicting intervals into a list of de-conflicted intervals with joined labels."""
+        vtx_list = []
+        for i, interval in enumerate(intervals):
+            interval[key] = interval[key] if key in interval else {i}
+            vtx_list.append(create_vertex(interval, "start", key))
+            vtx_list.append(create_vertex(interval, "finish", key))
         
-        return get_max_list_intervals(max_list, key) if max_list else []
+        return reconstruct_intervals_from_vertices(vtx_list, key) if vtx_list else []
