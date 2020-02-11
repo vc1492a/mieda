@@ -15,6 +15,15 @@ from typing import Tuple
 
 
 def create_directed_graph(intervals: list, key: str) -> nx.DiGraph:
+    """
+    Takes a list of intervals as an input and constructs a directed graph, using
+    only the first item in the list of intervals.
+    :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
+    'group' which describe each interval.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph, with the initial item in the list of intervals contained therein.
+    """
     # create a directed Graph
     graph = nx.DiGraph()
 
@@ -30,6 +39,17 @@ def create_directed_graph(intervals: list, key: str) -> nx.DiGraph:
 
 
 def interval_starts_in_ends_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
+    """
+    Checks to see whether the interval starts in and ends before and splits the interval appropriately
+    and updates the graph.
+    :param graph: a ni.DiGraph object.
+    :param pair: a pair of ids which are used to lookup an adjacent interval in the directed-graph.
+    :param interval: the interval to be compared to the input pair.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph updated as a result of the merge.
+    """
+
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key])
     right_attrs = set(interval[key]).union(left_attrs)
@@ -46,6 +66,17 @@ def interval_starts_in_ends_before(graph: nx.DiGraph, pair, interval: dict, key:
 
 
 def interval_starts_in_ends_after(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
+    """
+    Checks to see whether the interval starts in and ends after and splits the interval appropriately
+    and updates the graph.
+    :param graph: a ni.DiGraph object.
+    :param pair: a pair of ids which are used to lookup an adjacent interval in the directed-graph.
+    :param interval: the interval to be compared to the input pair.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph updated as a result of the merge.
+    """
+
     # first make an alteration based on the start
     left_attrs = set(graph[pair[0]][pair[1]][key])
     right_attrs = set(graph[pair[0]][pair[1]][key]).union(interval[key])
@@ -64,6 +95,17 @@ def interval_starts_in_ends_after(graph: nx.DiGraph, pair, interval: dict, key: 
 
 
 def interval_ends_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
+    """
+    Checks to see whether the interval starts ends before and splits the interval appropriately
+    and updates the graph.
+    :param graph: a ni.DiGraph object.
+    :param pair: a pair of ids which are used to lookup an adjacent interval in the directed-graph.
+    :param interval: the interval to be compared to the input pair.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph updated as a result of the merge.
+    """
+
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key]).union(interval[key])
     right_attrs = graph[pair[0]][pair[1]][key]
@@ -79,6 +121,17 @@ def interval_ends_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> n
 
 
 def interval_starts_together(graph: nx.DiGraph, pair, interval: dict, key: str) -> Tuple[bool, nx.DiGraph]:
+    """
+    Checks to see whether the interval starts together and splits the interval appropriately
+    and updates the graph.
+    :param graph: a ni.DiGraph object.
+    :param pair: a pair of ids which are used to lookup an adjacent interval in the directed-graph.
+    :param interval: the interval to be compared to the input pair.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph updated as a result of the merge.
+    """
+
     interval_split = False
     # if the current interval ends before
     if interval["finish"] < pair[1]:
@@ -101,6 +154,17 @@ def interval_starts_together(graph: nx.DiGraph, pair, interval: dict, key: str) 
 
 
 def interval_starts_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> Tuple[bool, nx.DiGraph]:
+    """
+    Checks to see whether the interval starts before and splits the interval appropriately
+    and updates the graph.
+    :param graph: a ni.DiGraph object.
+    :param pair: a pair of ids which are used to lookup an adjacent interval in the directed-graph.
+    :param interval: the interval to be compared to the input pair.
+    :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+    intervals.
+    :return: a nx.DiGraph directed-graph updated as a result of the merge.
+    """
+
     interval_split = False
     # if it ends before
     if interval["finish"] < pair[1]:

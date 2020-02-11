@@ -22,15 +22,16 @@ class Merge:
     warn = True
 
     @staticmethod
-    def check_input_interval_set_type(interval_set) -> Tuple[bool, set]:
+    def check_input_interval_set_type(interval_set: Union[list, set]) -> Tuple[bool, set]:
         """
         Checks to see if the set is the interval is the correct format. If not, attempts to convert the indicated set.
+        :param interval_set: an interval which is checked for proper formatting as a set.
         :return: a boolean indicating whether the test has passed and a set if the input could be converted.
         """
 
         passed = isinstance(interval_set, set)
         if not passed:
-            interval_set = set(interval_set) if isinstance(interval_set, list) else set([str(interval_set)])
+            interval_set = set(interval_set) if isinstance(interval_set, list) else set(list(str(interval_set)))
             passed = False
 
         return passed, interval_set
@@ -39,11 +40,16 @@ class Merge:
     def validate_intervals(intervals: list, key: str) -> list:
         """
         Ensures passed intervals are properly formed and warns if not.
+        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
+        'group' which describe each interval.
+        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+        intervals.
+        :return: a list of intervals, some of which may be converted to the proper format.
         """
 
         converted = False
         for i, interval in enumerate(intervals): 
-            interval[key] = interval[key] if key in interval else set([i])
+            interval[key] = interval[key] if key in interval else set(list(i))
             correct_type, interval_set = Merge.check_input_interval_set_type(interval[key])
             converted = True if not correct_type else converted
             interval[key] = interval_set
@@ -55,7 +61,12 @@ class Merge:
     @staticmethod
     def merge_same_intervals(intervals: list, key: str) -> list:
         """
-            Combines all identical intervals into one.
+        Combines all identical intervals into one.
+        :param intervals: a list of dictionaries containing the fields 'start', 'finish', 'key', and
+        'group' which describe each interval.
+        :param key: a string which identifies the key to use when merging intervals based on the sets contained in the
+        intervals.
+        :return: a list of aggregated intervals.
         """
         interval_pairs = combinations(intervals, 2)
         for ip in interval_pairs:
