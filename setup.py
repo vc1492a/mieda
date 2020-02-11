@@ -12,5 +12,5 @@ setup(
     keywords=[],
     classifiers=[],
     license='Apache License, Version 2.0',
-    install_requires=[]
+    install_requires=['networkx']
 )
