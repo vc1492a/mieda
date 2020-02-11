@@ -11,9 +11,10 @@ information to foreign countries or providing access to foreign persons.
 
 
 import networkx as nx
-from typing import Union
+from typing import Tuple
 
-def createDirectedGraph(intervals: list, key: str) -> nx.DiGraph:
+
+def create_directed_graph(intervals: list, key: str) -> nx.DiGraph:
     # create a directed Graph
     graph = nx.DiGraph()
 
@@ -28,7 +29,7 @@ def createDirectedGraph(intervals: list, key: str) -> nx.DiGraph:
     return graph
 
 
-def intervalStartsInEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
+def interval_starts_in_ends_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key])
     right_attrs = set(interval[key]).union(left_attrs)
@@ -44,7 +45,7 @@ def intervalStartsInEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str
     return graph
 
 
-def intervalStartsInEndsAfter(graph: nx.DiGraph, pair, interval: dict, key: str):
+def interval_starts_in_ends_after(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
     # first make an alteration based on the start
     left_attrs = set(graph[pair[0]][pair[1]][key])
     right_attrs = set(graph[pair[0]][pair[1]][key]).union(interval[key])
@@ -62,7 +63,7 @@ def intervalStartsInEndsAfter(graph: nx.DiGraph, pair, interval: dict, key: str)
     return graph
 
 
-def intervalEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
+def interval_ends_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> nx.DiGraph:
     # gather the adjacent attributes
     left_attrs = set(graph[pair[0]][pair[1]][key]).union(interval[key])
     right_attrs = graph[pair[0]][pair[1]][key]
@@ -77,11 +78,11 @@ def intervalEndsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
     return graph
 
 
-def intervalStartsTogether(graph: nx.DiGraph, pair, interval: dict, key: str):
+def interval_starts_together(graph: nx.DiGraph, pair, interval: dict, key: str) -> Tuple[bool, nx.DiGraph]:
     interval_split = False
     # if the current interval ends before
     if interval["finish"] < pair[1]:
-        graph = intervalEndsBefore(graph, pair, interval, key)
+        graph = interval_ends_before(graph, pair, interval, key)
         interval_split = True
 
     # if they start at the same time but the current interval ends after
@@ -99,7 +100,7 @@ def intervalStartsTogether(graph: nx.DiGraph, pair, interval: dict, key: str):
     return interval_split, graph
 
 
-def intervalStartsBefore(graph: nx.DiGraph, pair, interval: dict, key: str):
+def interval_starts_before(graph: nx.DiGraph, pair, interval: dict, key: str) -> Tuple[bool, nx.DiGraph]:
     interval_split = False
     # if it ends before
     if interval["finish"] < pair[1]:

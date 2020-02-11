@@ -35,9 +35,8 @@ class Merge:
 
         return passed, interval_set
 
-
     @staticmethod
-    def validateIntervals(intervals: list, key: str) -> list:
+    def validate_intervals(intervals: list, key: str) -> list:
         """
         Ensures passed intervals are properly formed and warns if not.
         """
@@ -53,9 +52,8 @@ class Merge:
 
         return intervals
 
-
     @staticmethod
-    def mergeSameIntervals(intervals: list, key: str) -> list:
+    def merge_same_intervals(intervals: list, key: str) -> list:
         """
             Combines all identical intervals into one.
         """
@@ -82,7 +80,6 @@ class Merge:
                 intervals.append(interval_new)
         return intervals
 
-
     @staticmethod
     def union(intervals: list, key: str = "set_items", return_graph: bool = False) -> Union[list, nx.DiGraph]:
         """
@@ -97,17 +94,17 @@ class Merge:
         """
 
         # check to see if the sets in the interval indicated is the proper format
-        intervals = Merge.validateIntervals(intervals, key)
+        intervals = Merge.validate_intervals(intervals, key)
 
         # first, merge together any intervals that span the same range (e.g. start and end indices)
         # the directed-graph algorithm is not intended to solve this use case which often comes up in practice
-        intervals = Merge.mergeSameIntervals(intervals, key)
+        intervals = Merge.merge_same_intervals(intervals, key)
 
         # sort the intervals by their start time to ensure a directional scan
         intervals = sorted(intervals, key=itemgetter('start'))
 
         # create a directed Graph from intervals
-        graph = helpers.createDirectedGraph(intervals, key)
+        graph = helpers.create_directed_graph(intervals, key)
 
         # add an edge between the nodes with its respective key and 'group' as attributes
         for _, interval in enumerate(intervals):
@@ -132,21 +129,21 @@ class Merge:
                     # check to see if the interval ends before the considered pair
                     # if so, pair start to interval start, interval start to interval end, and interval end to pair end
                     if interval["finish"] < pair[1]:
-                        graph = helpers.intervalStartsInEndsBefore(graph, pair, interval, key)
+                        graph = helpers.interval_starts_in_ends_before(graph, pair, interval, key)
                         break
 
                     # check if the interval ends outside of the previous one
                     if pair[1] <= interval["finish"]:
-                        graph = helpers.intervalStartsInEndsAfter(graph, pair, interval, key)
+                        graph = helpers.interval_starts_in_ends_after(graph, pair, interval, key)
 
                 # if they start at the same time
                 elif pair[0] == interval["start"]:
-                    interval_split, graph = helpers.intervalStartsTogether(graph, pair, interval, key)
+                    interval_split, graph = helpers.interval_starts_together(graph, pair, interval, key)
 
                 # if the current interval starts before - this comes up only due to adding new pairs prior to resorting
                 # in the next for loop
                 if interval["start"] < pair[0]:
-                    interval_split, graph = helpers.intervalStartsBefore(graph, pair, interval, key)
+                    interval_split, graph = helpers.interval_starts_before(graph, pair, interval, key)
                     
             # if the interval wasn't split or processed, it still needs to be included in the graph
             if not interval_split:
