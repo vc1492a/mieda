@@ -6,6 +6,9 @@ and adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## 0.0.2 
 ### Added 
+- Interval balancing which transforms the interval splitting problem 
+into one of removing intervals which are closed, an easier and more 
+efficient problem to solve. This improves the performance of `mieda`.
 - Code that allows intervals in isolation to be added to the directed graph. 
 - A parameter that allows the graph object (a NetworkX directed graph) 
 to be returned from `Merge.union` instead of a list of intervals (thanks 

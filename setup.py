@@ -4,7 +4,7 @@ setup(
     name='mieda',
     packages=['mieda'],
     version='0.0.2',
-    description='',
+    description='Merging of set-containing Intervals Efficiently with a Directed-graph Algorithm',
     author='Valentino Constantinou',
     author_email='vconstan@jpl.caltech.edu',
     url='https://github.com/vc1492a/mieda',

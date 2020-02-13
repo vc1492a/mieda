@@ -26,7 +26,7 @@ pip install mieda # or pip3 install ... if you're using both Python 3 and 2.
 
 To merge intervals containing sets, pass a list of dictionaries as shown 
 in the below example:
-3
+
 ```python
 import datetime
 from mieda.intervals import Merge
@@ -89,7 +89,6 @@ print(Merge.union(intervals=intervals, return_graph=True))
 ```
 
 
-
 ## Scalability 
 
 MIEDA is pretty scalable: 
@@ -120,22 +119,3 @@ Setting up a virtual environment for testing and development is recommended.
 
 ### License
 This project is licensed under the Apache 2.0 license.
-
-### Research
-If citing `mieda` in your research, please consider using the following entry: 
-
-```
-@article{ConstantinouMishraStonebrakerHoffmann2020,
-  doi = {},
-  url = {},
-  year  = {},
-  month = {},
-  publisher = {},
-  volume = {},
-  number = {},
-  pages = {},
-  author = {Valentino Constantinou, Asitang Mishra, Ryan Stonebraker, Mark Hoffmann},
-  title = {},
-  journal = {}
-}
-```
